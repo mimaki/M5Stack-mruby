@@ -1,39 +1,57 @@
 #include <M5Stack.h>
 
+#include <stdio.h>
+#include <stdint.h>
+#include "mruby.h"
+#include "mruby/dump.h"
+#include "mruby/variable.h"
+#include "mruby/string.h"
+
 #if CONFIG_FREERTOS_UNICORE
 #define ARDUINO_RUNNING_CORE 0
 #else
 #define ARDUINO_RUNNING_CORE 1
 #endif
 
-// The setup routine runs once when M5Stack starts up
-void setup(){
+static const uint8_t appbin[] = {
+0x45,0x54,0x49,0x52,0x30,0x30,0x30,0x34,0x6c,0x9f,0x00,0x00,0x00,0x58,0x4d,0x41,
+0x54,0x5a,0x30,0x30,0x30,0x30,0x49,0x52,0x45,0x50,0x00,0x00,0x00,0x3a,0x30,0x30,
+0x30,0x30,0x00,0x00,0x00,0x32,0x00,0x01,0x00,0x02,0x00,0x00,0x00,0x00,0x00,0x02,
+0x3d,0x00,0x80,0x00,0x4a,0x00,0x00,0x00,0x00,0x00,0x00,0x01,0x00,0x00,0x0d,0x48,
+0x65,0x6c,0x6c,0x6f,0x2c,0x20,0x6d,0x72,0x75,0x62,0x79,0x21,0x00,0x00,0x00,0x00,
+0x45,0x4e,0x44,0x00,0x00,0x00,0x00,0x08
+};
 
-  // Initialize the M5Stack object
+void mrubyTask(void *pvParameters)
+{
+  mrb_state *mrb = NULL;
+  mrb_value v;
+
   M5.begin();
 
-  // LCD display
-  M5.Lcd.print("Hello World");
-}
+  M5.Lcd.print("mrb_open() ... ");
+  mrb = mrb_open();
+  if (!mrb) {
+    M5.Lcd.print("failed.\n");
+    goto ERROR;
+  }
+  M5.Lcd.print("done.\n\n");
 
-// The loop routine runs over and over again forever
-void loop() {
+  v = mrb_load_irep(mrb, appbin);   // 'Hello, mruby!'
+  M5.Lcd.print(mrb_str_to_cstr(mrb, v));
 
-  M5.update();
-}
+  M5.Lcd.print("\n\nmrb_close() ... ");
+  mrb_close(mrb);
+  M5.Lcd.print("done.\n");
 
-// The arduino task
-void loopTask(void *pvParameters)
-{
-    setup();
-    for(;;) {
-        micros(); //update overflow
-        loop();
-    }
+ERROR:
+  while (1) {
+    micros();
+  }
 }
 
 extern "C" void app_main()
 {
-    initArduino();
-    xTaskCreatePinnedToCore(loopTask, "loopTask", 8192, NULL, 1, NULL, ARDUINO_RUNNING_CORE);
+  initArduino();
+  xTaskCreatePinnedToCore(mrubyTask, "mrubyTask", 8192, NULL, 1, NULL, ARDUINO_RUNNING_CORE);
 }
