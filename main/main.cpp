@@ -13,6 +13,11 @@
 #define ARDUINO_RUNNING_CORE 1
 #endif
 
+#define ENABLE_MIRB   /* mirb */
+
+#ifdef ENABLE_MIRB
+extern "C" int mirb(mrb_state*);
+#else
 static const uint8_t appbin[] = {
 0x45,0x54,0x49,0x52,0x30,0x30,0x30,0x34,0x6c,0x9f,0x00,0x00,0x00,0x58,0x4d,0x41,
 0x54,0x5a,0x30,0x30,0x30,0x30,0x49,0x52,0x45,0x50,0x00,0x00,0x00,0x3a,0x30,0x30,
@@ -21,28 +26,38 @@ static const uint8_t appbin[] = {
 0x65,0x6c,0x6c,0x6f,0x2c,0x20,0x6d,0x72,0x75,0x62,0x79,0x21,0x00,0x00,0x00,0x00,
 0x45,0x4e,0x44,0x00,0x00,0x00,0x00,0x08
 };
+#endif
 
 void mrubyTask(void *pvParameters)
 {
   mrb_state *mrb = NULL;
+#ifndef ENABLE_MIRB
   mrb_value v;
+#endif
 
   M5.begin();
 
-  M5.Lcd.print("mrb_open() ... ");
   mrb = mrb_open();
   if (!mrb) {
-    M5.Lcd.print("failed.\n");
+    M5.Lcd.print("mrb_open() failed.\n");
     goto ERROR;
   }
-  M5.Lcd.print("done.\n\n");
 
-  v = mrb_load_irep(mrb, appbin);   // 'Hello, mruby!'
-  M5.Lcd.print(mrb_str_to_cstr(mrb, v));
+#ifdef ENABLE_MIRB
+  mirb(mrb);
+#else
+  v = mrb_load_irep(mrb, appbin);
+  if (mrb->exc) {
+    mrb_print_error(mrb);
+    mrb->exc = 0;
+  }
+  else {
+    Serial.printf(" => ");
+    mrb_p(mrb, v);
+  }
+#endif
 
-  M5.Lcd.print("\n\nmrb_close() ... ");
   mrb_close(mrb);
-  M5.Lcd.print("done.\n");
 
 ERROR:
   while (1) {

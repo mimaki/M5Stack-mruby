@@ -41,6 +41,7 @@ MRuby::CrossBuild.new('esp32') do |conf|
     cc.defines << %w(MRB_GC_STRESS)
 
     cc.defines << %w(ESP_PLATFORM)
+    cc.defines << %w(ESP32)
   end
 
   conf.cxx do |cxx|
@@ -53,10 +54,10 @@ MRuby::CrossBuild.new('esp32') do |conf|
 
   conf.bins = []
   conf.build_mrbtest_lib_only
-  conf.disable_cxx_exception
 
   conf.gem :core => "mruby-print"
   conf.gem :core => "mruby-compiler"
-  # conf.gem :github => "mruby-esp32/mruby-esp32-system"
-  # conf.gem :github => "mruby-esp32/mruby-esp32-wifi"
+
+  conf.gem :git => "https://github.com/mimaki/mruby-stdio.git"
+  conf.gem :git => "https://github.com/mimaki/mruby-stdio-m5stack.git"
 end
