@@ -35,7 +35,6 @@ MRuby::CrossBuild.new('esp32') do |conf|
     cc.flags.collect! { |x| x.gsub('-MP', '') }
 
     cc.defines << %w(MRB_HEAP_PAGE_SIZE=64)
-    cc.defines << %w(MRB_USE_IV_SEGLIST)
     cc.defines << %w(KHASH_DEFAULT_SIZE=8)
     cc.defines << %w(MRB_STR_BUF_MIN_SIZE=20)
     cc.defines << %w(MRB_GC_STRESS)
@@ -57,7 +56,9 @@ MRuby::CrossBuild.new('esp32') do |conf|
 
   conf.gem :core => "mruby-print"
   conf.gem :core => "mruby-compiler"
+  conf.gem :core => "mruby-random"
 
   conf.gem :git => "https://github.com/mimaki/mruby-stdio.git"
   conf.gem :git => "https://github.com/mimaki/mruby-stdio-m5stack.git"
+  conf.gem :git => "https://github.com/mimaki/mruby-lcd-m5stack.git"
 end
