@@ -56,6 +56,7 @@ MRuby::CrossBuild.new('esp32') do |conf|
 
   conf.gem :core => "mruby-print"
   conf.gem :core => "mruby-compiler"
+  conf.gem :core => "mruby-math"
   conf.gem :core => "mruby-random"
   conf.gem :core => "mruby-time"
 
