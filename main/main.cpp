@@ -28,7 +28,7 @@ run_app_mrb(mrb_state *mrb, const char *fname)
   /* open mrb file */
   fs::File file = SD.open(fname, FILE_READ);
   if (!file) {
-    M5.lcd.printf("(%s) load error.\n", fname);
+    // M5.lcd.printf("(%s) load error.\n", fname);
     return val;
   }
 
@@ -66,12 +66,16 @@ void mrubyTask(void *pvParameters)
       mrb->exc = 0;
     }
     else {
-      M5.lcd.print(" => ");
-      if (!mrb_string_p(val)) {
-        val = mrb_obj_as_string(mrb, val);
+      if (!mrb_nil_p(val)) {
+        M5.lcd.print(" => ");
+        if (!mrb_string_p(val)) {
+          val = mrb_obj_as_string(mrb, val);
+        }
       }
     }
-    M5.lcd.printf("%s\n", mrb_str_to_cstr(mrb, val));
+    if (!mrb_nil_p(val)) {
+      M5.lcd.printf("%s\n", mrb_str_to_cstr(mrb, val));
+    }
   }
 
   /* Enter interactive mode */
