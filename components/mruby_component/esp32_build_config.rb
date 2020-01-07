@@ -32,12 +32,14 @@ MRuby::CrossBuild.new('esp32') do |conf|
     cc.include_paths << ENV["COMPONENT_INCLUDES"].split(' ')
 
     cc.flags << '-Wno-maybe-uninitialized'
+    cc.flags.flatten!
     cc.flags.collect! { |x| x.gsub('-MP', '') }
 
     cc.defines << %w(MRB_HEAP_PAGE_SIZE=64)
     cc.defines << %w(KHASH_DEFAULT_SIZE=8)
     cc.defines << %w(MRB_STR_BUF_MIN_SIZE=20)
     cc.defines << %w(MRB_GC_STRESS)
+    cc.defines << %w(MRB_METHOD_T_STRUCT)
 
     cc.defines << %w(ESP_PLATFORM)
     cc.defines << %w(ESP32)
