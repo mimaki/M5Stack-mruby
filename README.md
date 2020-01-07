@@ -29,7 +29,7 @@ cd ~/esp
 git clone --recursive https://github.com/mimaki/M5Stack-mruby.git
 ```
 
-## Build adn write to M5Stack
+## Build and write to M5Stack
 
 Connect M5Stack and PC with USB cable.  
 Type below command at `M5Stack-mruby` directory.
