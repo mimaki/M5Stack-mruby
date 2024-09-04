@@ -667,10 +667,10 @@ mirb(mrb_state *mrb)
         }
 #endif
         /* adjust stack length of toplevel environment */
-        if (mrb->c->cibase->env) {
-          struct REnv *e = mrb->c->cibase->env;
-          if (e && MRB_ENV_STACK_LEN(e) < proc->body.irep->nlocals) {
-            MRB_ENV_SET_STACK_LEN(e, proc->body.irep->nlocals);
+        if (mrb->c->cibase->u.env) {
+          struct REnv *e = mrb_vm_ci_env(mrb->c->cibase);
+          if (e && MRB_ENV_LEN(e) < proc->body.irep->nlocals) {
+            MRB_ENV_SET_LEN(e, proc->body.irep->nlocals);
           }
         }
         /* pass a proc for evaluation */
