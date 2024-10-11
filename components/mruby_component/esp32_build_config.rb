@@ -35,11 +35,22 @@ MRuby::CrossBuild.new('esp32') do |conf|
     cc.flags.flatten!
     cc.flags.collect! { |x| x.gsub('-MP', '') }
 
-    cc.defines << %w(MRB_HEAP_PAGE_SIZE=64)
+    cc.defines << %w(MRB_32BIT)
+    cc.defines << %w(MRB_USE_FLOAT)
+    cc.defines << %w(MRB_NO_METHOD_CACHE)
+    cc.defines << %w(MRB_WORD_BOXING)
+    # cc.defines << %w(MRB_INT32)
+    # cc.defines << %w(MRB_STR_LENGTH_MAX=1024)
+    # cc.defines << %w(MRB_ARY_LENGTH_MAX=1024)
+
+    # cc.defines << %w(MRB_HEAP_PAGE_SIZE=64)
+    cc.defines << %w(MRB_HEAP_PAGE_SIZE=96)
     cc.defines << %w(KHASH_DEFAULT_SIZE=8)
-    cc.defines << %w(MRB_STR_BUF_MIN_SIZE=20)
+    # # cc.defines << %w(MRB_STR_BUF_MIN_SIZE=20)
     cc.defines << %w(MRB_GC_STRESS)
     cc.defines << %w(MRB_METHOD_T_STRUCT)
+
+    cc.defines << %w(POOL_PAGE_SIZE=4096)
 
     cc.defines << %w(ESP_PLATFORM)
     cc.defines << %w(ESP32)
@@ -58,18 +69,19 @@ MRuby::CrossBuild.new('esp32') do |conf|
 
   conf.gem :core => "mruby-print"
   conf.gem :core => "mruby-compiler"
-  conf.gem :core => "mruby-math"
-  conf.gem :core => "mruby-random"
-  conf.gem :core => "mruby-time"
+  # conf.gem :core => "mruby-math"
+  # conf.gem :core => "mruby-random"
+  # conf.gem :core => "mruby-time"
 
   conf.gem :git => "https://github.com/mimaki/mruby-stdio.git"
   conf.gem :git => "https://github.com/mimaki/mruby-stdio-m5stack.git"
   conf.gem :git => "https://github.com/mimaki/mruby-sleep-esp32.git"
-  conf.gem :git => "https://github.com/mimaki/mruby-lcd-m5stack.git"
-  conf.gem :git => "https://github.com/mimaki/mruby-button-m5stack.git"
-  conf.gem :git => "https://github.com/mruby-plato-mgem/mruby-plato-gpio.git"
-  conf.gem :git => "https://github.com/mruby-plato-mgem/mruby-plato-digitalio.git"
-  conf.gem :git => "https://github.com/mruby-plato-mgem/mruby-plato-digitalio-esp32.git"
-  conf.gem :git => "https://github.com/mruby-plato-mgem/mruby-plato-i2c.git"
-  conf.gem :git => "https://github.com/mruby-plato-mgem/mruby-plato-i2c-esp32.git"
+  # conf.gem :git => "https://github.com/mimaki/mruby-lcd-m5stack.git"
+  # conf.gem :git => "https://github.com/mimaki/mruby-button-m5stack.git"
+  # conf.gem :git => "https://github.com/mruby-plato-mgem/mruby-plato-gpio.git"
+  # conf.gem :git => "https://github.com/mruby-plato-mgem/mruby-plato-digitalio.git"
+  # conf.gem :git => "https://github.com/mruby-plato-mgem/mruby-plato-digitalio-esp32.git"
+  # conf.gem :git => "https://github.com/mruby-plato-mgem/mruby-plato-i2c.git"
+  # conf.gem :git => "https://github.com/mruby-plato-mgem/mruby-plato-i2c-esp32.git"
+  conf.gem :git => "https://github.com/mimaki/mruby-m5stack-i2c.git"
 end
