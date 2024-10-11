@@ -13,6 +13,11 @@ extern "C" {
 #endif
 
 #include <mruby.h>
+
+#ifdef MRB_DISABLE_STDIO
+# error mruby-bin-mirb conflicts 'MRB_DISABLE_STDIO' configuration in your 'build_config.rb'
+#endif
+
 #include <mruby/array.h>
 #include <mruby/proc.h>
 #include <mruby/compile.h>
@@ -23,7 +28,6 @@ extern "C" {
 
 #include <stdlib.h>
 #include <string.h>
-#include <stdio.h>
 #include <ctype.h>
 
 #undef ENABLE_READLINE
@@ -271,7 +275,7 @@ usage(const char *name)
   };
   const char *const *p = usage_msg;
 
-  printf("Usage: %s [switches]\n", name);
+  printf("Usage: %s [switches] [programfile] [arguments]\n", name);
   while (*p)
     printf("  %s\n", *p++);
 }
@@ -437,6 +441,26 @@ ctrl_c_handler(int signo)
   MIRB_SIGLONGJMP(ctrl_c_buf, 1);
 }
 #endif
+
+#ifndef DISABLE_MIRB_UNDERSCORE
+void decl_lv_underscore(mrb_state *mrb, mrbc_context *cxt)
+{
+  struct RProc *proc;
+  struct mrb_parser_state *parser;
+
+  parser = mrb_parse_string(mrb, "_=nil", cxt);
+  if (parser == NULL) {
+    FPUTS("create parser state error\n", stderr);
+    mrb_close(mrb);
+    exit(EXIT_FAILURE);
+  }
+
+  proc = mrb_generate_code(mrb, parser);
+  mrb_vm_run(mrb, proc, mrb_top_self(mrb), 0);
+
+  mrb_parser_free(parser);
+}
+#endif
 #endif
 
 int
@@ -459,7 +483,7 @@ mirb(mrb_state *mrb)
   // struct _args args;
   // mrb_value ARGV;
   // int n;
-  // int i;
+  int i;
   mrb_bool code_block_open = FALSE;
   int ai;
   unsigned int stack_keep = 0;
@@ -468,7 +492,7 @@ mirb(mrb_state *mrb)
   /* new interpreter instance */
   mrb = mrb_open();
   if (mrb == NULL) {
-    fputs("Invalid mrb interpreter, exiting mirb\n", stderr);
+    FPUTS("Invalid mrb interpreter, exiting mirb\n", stderr);
     return EXIT_FAILURE;
   }
 
@@ -493,7 +517,7 @@ mirb(mrb_state *mrb)
 #ifdef ENABLE_READLINE
   history_path = get_history_path(mrb);
   if (history_path == NULL) {
-    fputs("failed to get history path\n", stderr);
+    FPUTS("failed to get history path\n", stderr);
     mrb_close(mrb);
     return EXIT_FAILURE;
   }
@@ -506,7 +530,12 @@ mirb(mrb_state *mrb)
   print_hint();
 
   cxt = mrbc_context_new(mrb);
+
 #if 0
+#ifndef DISABLE_MIRB_UNDERSCORE
+  decl_lv_underscore(mrb, cxt);
+#endif
+
   /* Load libraries */
   for (i = 0; i < args.libc; i++) {
     FILE *lfp = fopen(args.libv[i], "r");
@@ -519,6 +548,7 @@ mirb(mrb_state *mrb)
     fclose(lfp);
   }
 #endif
+
   cxt->capture_errors = TRUE;
   cxt->lineno = 1;
   mrbc_filename(mrb, cxt, "(mirb)");
@@ -532,7 +562,6 @@ mirb(mrb_state *mrb)
 
     MRB_TRY(&c_jmp);
     mrb->jmp = &c_jmp;
-
 #if 0
     if (args.rfp) {
       if (fgets(last_code_line, sizeof(last_code_line)-1, args.rfp) != NULL)
@@ -595,7 +624,7 @@ mirb(mrb_state *mrb)
       break;
     }
     if (strlen(line) > sizeof(last_code_line)-2) {
-      fputs("input string too long\n", stderr);
+      FPUTS("input string too long\n", stderr);
       continue;
     }
     strcpy(last_code_line, line);
@@ -604,8 +633,7 @@ mirb(mrb_state *mrb)
     MIRB_LINE_FREE(line);
 #endif
 
-// done:
-
+  // done:
     if (code_block_open) {
       if (strlen(ruby_code)+strlen(last_code_line) > sizeof(ruby_code)-1) {
         FPUTS("concatenated input string too long\n", stderr);
@@ -643,13 +671,13 @@ mirb(mrb_state *mrb)
       if (0 < parser->nwarn) {
         /* warning */
         char* msg = mrb_locale_from_utf8(parser->warn_buffer[0].message, -1);
-        PRINTF("line %d: %s\n", parser->warn_buffer[0].lineno, msg);
+        printf("line %d: %s\n", parser->warn_buffer[0].lineno, msg);
         mrb_locale_free(msg);
       }
       if (0 < parser->nerr) {
         /* syntax error */
         char* msg = mrb_locale_from_utf8(parser->error_buffer[0].message, -1);
-        PRINTF("line %d: %s\n", parser->error_buffer[0].lineno, msg);
+        printf("line %d: %s\n", parser->error_buffer[0].lineno, msg);
         mrb_locale_free(msg);
       }
       else {
@@ -669,8 +697,8 @@ mirb(mrb_state *mrb)
         /* adjust stack length of toplevel environment */
         if (mrb->c->cibase->env) {
           struct REnv *e = mrb->c->cibase->env;
-          if (e && MRB_ENV_STACK_LEN(e) < proc->body.irep->nlocals) {
-            MRB_ENV_SET_STACK_LEN(e, proc->body.irep->nlocals);
+          if (e && MRB_ENV_LEN(e) < proc->body.irep->nlocals) {
+            MRB_ENV_SET_LEN(e, proc->body.irep->nlocals);
           }
         }
         /* pass a proc for evaluation */
@@ -691,6 +719,9 @@ mirb(mrb_state *mrb)
             result = mrb_any_to_s(mrb, result);
           }
           p(mrb, result, 1);
+#ifndef DISABLE_MIRB_UNDERSCORE
+          *(mrb->c->stack + 1) = result;
+#endif
         }
       }
       ruby_code[0] = '\0';
@@ -722,7 +753,7 @@ mirb(mrb_state *mrb)
   }
 #endif
   mrbc_context_free(mrb, cxt);
-  // mrb_close(mrb);
+  mrb_close(mrb);
 
   return 0;
 }
